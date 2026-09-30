@@ -1,15 +1,124 @@
-@import "tailwindcss";
-
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+@font-face {
+    font-family: 'Sylfaen';
+    src: local('Sylfaen'), url('./assets/sylfaen.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
 }
 
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    min-height: 100%;
+    font-family: 'Sylfaen', serif;
+    background: white;
+    width: 100%;
+}
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
+* {
+    margin: 0;
+    padding: 0;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+:root {
+    --background-color: #fff;
+    --text-color: #000;
+    --border-radius: 20px;
+    --primary-color: #C8A8C8;
+    --secondary-color: #841F82;
+    --disabled-color: #EBEBEB;
+    --horizontal-padding: 1rem;
+    --link-color: #CCC;
+}
+
+*::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+/* Анимация для страниц при монтировании/демонтировании */
+#root > * {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Анимация при переходе между страницами */
+#root.transitioning > * {
+    animation: fadeOut 0.2s ease-in-out forwards;
+}
+
+/* Анимации для контента */
+@keyframes fade-out-slide-up {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
+@keyframes fade-in-slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Глобальные настройки View Transitions */
+::view-transition-old(content) {
+    animation: 0.2s cubic-bezier(0.4, 0, 0.2, 1) both fade-out-slide-up;
+}
+
+::view-transition-new(content) {
+    animation: 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.05s both fade-in-slide-down;
+}
+
+/* AppBar не должен анимироваться */
+::view-transition-old(appbar),
+::view-transition-new(appbar) {
+    animation: none;
+}
+
+/* Анимация только для контента, AppBar остается на месте */
+::view-transition-group(content) {
+    animation-duration: 0.3s;
+}
+
+::view-transition-old(content) {
+    animation: 0.2s ease-out both fade-out-up;
+}
+
+::view-transition-new(content) {
+    animation: 0.3s ease-in 0.05s both fade-in-down;
+}
+
+@keyframes fade-out-up {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-100px);
+    }
+}
+
+@keyframes fade-in-down {
+    from {
+        opacity: 0;
+        transform: translateY(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

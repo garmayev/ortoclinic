@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Medix</title>
+    
+    <script>
+        // Глобальное хранилище для данных мессенджера
+        window.__MESSENGER_DATA__ = {
+            ready: false,
+            type: null,
+            webApp: null,
+            user: null,
+            initData: null,
+            initDataUnsafe: null,
+            error: null
+        };
+        
+        // Массив для колбэков
+        window.__MESSENGER_CALLBACKS__ = window.__MESSENGER_CALLBACKS__ || [];
+        window.__MESSENGER_INITIALIZED__ = false;
+        
+        function triggerCallbacks() {
+            console.log('[Bridge] Triggering callbacks, count:', window.__MESSENGER_CALLBACKS__.length);
+            const callbacks = [...window.__MESSENGER_CALLBACKS__];
+            window.__MESSENGER_CALLBACKS__ = [];
+            callbacks.forEach(callback => {
+                try {
+                    callback();
+                } catch (e) {
+                    console.error('[Bridge] Callback error:', e);
+                }
+            });
+        }
+        
+        window.MessengerBridge = {
+            initialized: false,
+            type: null,
+            eventSent: false,
+            
+            setData: function(type, webApp, user = null) {
+                console.log(`[Bridge] Setting data for ${type}`);
+                
+                window.__MESSENGER_DATA__ = {
+                    ready: true,
+                    type: type,
+                    webApp: webApp,
+                    user: user || webApp?.initDataUnsafe?.user || null,
+                    initData: webApp?.initData || null,
+                    initDataUnsafe: webApp?.initDataUnsafe || null,
+                    error: null
+                };
+                
+                window.__MESSENGER_INITIALIZED__ = true;
+                
+                // Отправляем события
+                window.dispatchEvent(new CustomEvent(`${type}:ready`, { detail: window.__MESSENGER_DATA__ }));
+                window.dispatchEvent(new CustomEvent('messenger:ready', { detail: window.__MESSENGER_DATA__ }));
+                
+                // Вызываем колбэки
+                triggerCallbacks();
+                
+                this.initialized = true;
+                this.type = type;
+                this.eventSent = true;
+            },
+            
+            setError: function(type, error) {
+                console.log(`[Bridge] Setting error for ${type}:`, error);
+                
+                window.__MESSENGER_DATA__ = {
+                    ready: false,
+                    type: type,
+                    webApp: null,
+                    user: null,
+                    initData: null,
+                    initDataUnsafe: null,
+                    error: error
+                };
+                
+                window.dispatchEvent(new CustomEvent(`${type}:error`, { detail: { error: error } }));
+                triggerCallbacks();
+                this.eventSent = true;
+            },
+            
+            initMax: function() {
+                console.log('[Bridge] Initializing Max...');
+                
+                if (window.WebApp && (window.WebApp.initDataUnsafe || window.WebApp.initData)) {
+                    console.log('[Bridge] Found window.WebApp immediately');
+                    if (window.WebApp.ready) window.WebApp.ready();
+                    if (window.WebApp.expand) window.WebApp.expand();
+                    this.setData('max', window.WebApp);
+                    return;
+                }
+                
+                let attempts = 0;
+                const maxAttempts = 30;
+                
+                const checkMax = setInterval(() => {
+                    attempts++;
+                    
+                    if (window.WebApp && (window.WebApp.initDataUnsafe || window.WebApp.initData)) {
+                        clearInterval(checkMax);
+                        console.log('[Bridge] Max WebApp found on attempt', attempts);
+                        if (window.WebApp.ready) window.WebApp.ready();
+                        if (window.WebApp.expand) window.WebApp.expand();
+                        this.setData('max', window.WebApp);
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkMax);
+                        console.warn('[Bridge] Max WebApp not found');
+                        this.setError('max', 'WebApp not found');
+                    }
+                }, 200);
+            },
+            
+            detectAndInit: function() {
+                const ua = navigator.userAgent;
+                const isMax = ua.includes('Max') || ua.includes('MaxMessenger') || window.location.pathname.includes('/max/');
+                
+                console.log('[Bridge] Environment detected:', { isMax, ua });
+                
+                if (isMax) {
+                    this.initMax();
+                } else {
+                    console.log('[Bridge] No messenger environment');
+                    this.setData('none', null);
+                }
+            }
+        };
+        
+        // Запускаем определение окружения
+        window.MessengerBridge.detectAndInit();
+    </script>
+    <script src="https://st.max.ru/js/max-web-app.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+</body>
+</html>
