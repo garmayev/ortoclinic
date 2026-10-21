@@ -1,0 +1,111 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "pre-prod" ]
+
+jobs:
+  build-and-archive:
+    runs-on: ubuntu-latest
+    outputs:
+      archive_name: ${{ steps.set_archive.outputs.ARCHIVE_NAME }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Archive dist folder
+        id: set_archive
+        run: |
+          ARCHIVE_NAME="dist-$(date +%Y%m%d-%H%M%S).zip"
+          echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
+          echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
+          zip -r $ARCHIVE_NAME dist/
+
+      - name: Upload archive as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-archive
+          path: ${{ steps.set_archive.outputs.ARCHIVE_NAME }}
+          retention-days: 1
+
+  deploy:
+    needs: build-and-archive
+    runs-on: ubuntu-latest
+    environment: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/pre-prod'
+    steps:
+      - name: Download deployment archive
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-archive
+          path: .
+
+      - name: Get archive name
+        id: get_archive
+        run: |
+          ARCHIVE_FILE=$(ls *.zip | head -n 1)
+          echo "ARCHIVE_FILE=$ARCHIVE_FILE" >> $GITHUB_OUTPUT
+          echo "ARCHIVE_FILE=$ARCHIVE_FILE" >> $GITHUB_ENV
+
+      - name: Setup SSH key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+
+      - name: Create directory on server
+        run: |
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
+            "mkdir -p ${{ secrets.SERVER_PATH }}/uploads"
+
+      - name: Debug - check server paths
+        run: |
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}
+
+      - name: Upload archive to server
+        env:
+          ARCHIVE_NAME: ${{ steps.get_archive.outputs.ARCHIVE_FILE }}
+        run: |
+          scp -o StrictHostKeyChecking=no -i /tmp/deploy_key \
+            $ARCHIVE_NAME \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.SERVER_PATH }}/uploads/
+
+      - name: Verify file uploaded
+        env:
+          ARCHIVE_NAME: ${{ steps.get_archive.outputs.ARCHIVE_FILE }}
+        run: |
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
+            "ls -la ${{ secrets.SERVER_PATH }}/uploads/$ARCHIVE_NAME"
+
+
+      - name: Notify server
+        env:
+          ARCHIVE_NAME: ${{ steps.get_archive.outputs.ARCHIVE_FILE }}
+        run: |
+          echo "Name: $ARCHIVE_NAME"
+          echo "Sending GET request to: https://medix.amgs.online/company/unzip?company_id=${{ secrets.COMPANY_ID }}&artifact_name=$ARCHIVE_NAME"
+          
+          # Явно указываем метод GET с помощью -G или -X GET
+          curl -G "https://medix.amgs.online/company/unzip" \
+            --data-urlencode "company_id=${{ secrets.COMPANY_ID }}" \
+            --data-urlencode "artifact_name=$ARCHIVE_NAME" \
+            --fail \
+            --show-error
+
+      - name: Cleanup
+        run: |
+          rm -f /tmp/deploy_key
+          # Final Test
