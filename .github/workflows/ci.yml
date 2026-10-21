@@ -43,7 +43,7 @@ jobs:
     needs: build-and-archive
     runs-on: ubuntu-latest
     environment: test
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/pre-prod'
+    if: github.ref == 'refs/heads/master'
     steps:
       - name: Download deployment archive
         uses: actions/download-artifact@v4
