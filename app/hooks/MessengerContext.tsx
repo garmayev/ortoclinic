@@ -5,7 +5,7 @@ import Account from "~/classes/Account";
 
 export type MessengerType = 'telegram' | 'max' | 'none';
 
-interface MessengerUser {
+export interface MessengerUser {
     id: number | string;
     username?: string;
     first_name?: string;
@@ -14,7 +14,7 @@ interface MessengerUser {
     phone?: string;
 }
 
-interface MessengerWebApp {
+export interface MessengerWebApp {
     ready: () => void;
     expand: () => void;
     close: () => void;
@@ -26,7 +26,7 @@ interface MessengerWebApp {
     };
 }
 
-interface MessengerContextType {
+export interface MessengerContextType {
     messengerType: MessengerType;
     webApp: MessengerWebApp | null;
     user: MessengerUser | null;
@@ -59,9 +59,9 @@ export const useMessenger = () => {
 // Преобразование пользователя из разных мессенджеров в единый формат
 const normalizeUser = (user: any, type: MessengerType): MessengerUser | null => {
     if (!user) return null;
-    
+
     console.log('[normalizeUser] Input:', { user, type });
-    
+
     if (type === 'telegram') {
         const normalized = {
             id: user.id,
@@ -78,11 +78,12 @@ const normalizeUser = (user: any, type: MessengerType): MessengerUser | null => 
             firstName: user.firstName || user.first_name,
             lastName: user.lastName || user.last_name,
             first_name: user.firstName || user.first_name,
+            avatar: user.photo_url
         };
         console.log('[normalizeUser] Max normalized:', normalized);
         return normalized;
     }
-    
+
     return null;
 };
 
@@ -113,7 +114,7 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
         user: null,
         ready: false
     });
-    
+
     const [isRegistered, setIsRegistered] = useState(false);
     const initializedRef = useRef(false);
 
@@ -132,36 +133,36 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
 
             if (user && user.id) {
                 const webApp = createWebAppWrapper(data.webApp, type);
-                
+
                 setState({
                     messengerType: type,
                     webApp: webApp,
                     user: user,
                     ready: true
                 });
-                
+
                 initializedRef.current = true;
                 return true;
             } else {
                 console.warn('[MessengerProvider] ❌ No valid user in data', { rawUser, user, data });
             }
         }
-        
+
         return false;
     };
 
     // Проверка глобальных данных
     const checkAndInitialize = () => {
         if (initializedRef.current) return true;
-        
+
         console.log('[MessengerProvider] Checking global data...');
         console.log('[MessengerProvider] window.__MESSENGER_DATA__:', window.__MESSENGER_DATA__);
-        
+
         if (!!window.__MESSENGER_DATA__?.ready) {
             console.log('[MessengerProvider] Found existing global data');
             return initializeFromData(window.__MESSENGER_DATA__);
         }
-        
+
         console.log('[MessengerProvider] No global data available yet');
         return false;
     };
@@ -175,12 +176,12 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
                     resolve();
                 }
             };
-            
+
             if (!window.__MESSENGER_CALLBACKS__) {
                 window.__MESSENGER_CALLBACKS__ = [];
             }
             window.__MESSENGER_CALLBACKS__.push(callback);
-            
+
             // Если данные уже есть, вызываем callback немедленно
             if (!!window.__MESSENGER_DATA__?.ready) {
                 console.log('[MessengerProvider] Data already ready, calling callback immediately');
@@ -206,15 +207,15 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
                 console.log('[MessengerProvider] ✅ Initialized from existing data');
                 return;
             }
-            
+
             // Если данных нет, регистрируем callback и ждем
             console.log('[MessengerProvider] No data yet, waiting for callback...');
             await registerCallback();
             console.log('[MessengerProvider] Callback completed, initialization done');
         };
-        
+
         init();
-        
+
         // Дополнительная проверка через интервал (на случай, если callback не сработал)
         const interval = setInterval(() => {
             if (!initializedRef.current && !!window.__MESSENGER_DATA__?.ready) {
@@ -222,7 +223,7 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
                 initializeFromData(window.__MESSENGER_DATA__);
             }
         }, 200);
-        
+
         // Таймаут на случай, если ничего не сработало
         const timeout = setTimeout(() => {
             if (!initializedRef.current) {
@@ -231,7 +232,7 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
             }
             clearInterval(interval);
         }, 15000);
-        
+
         return () => {
             clearInterval(interval);
             clearTimeout(timeout);
@@ -243,7 +244,7 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
         return new Promise((resolve) => {
             try {
                 const webApp = state.webApp;
-                
+
                 if (webApp?.requestContact) {
                     console.log('[requestPhoneNumber] Calling webApp.requestContact');
                     webApp.requestContact().then((result: any) => {
@@ -276,8 +277,8 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
             console.log('[checkUserExists] No user id available');
             return false;
         }
-        
-        const existingToken = localStorage.getItem("token");
+
+        const existingToken = window.localStorage.getItem("token");
         if (existingToken) {
             setIsRegistered(true);
             return true;
@@ -289,13 +290,14 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
             const response = await Account.checkChatId(Number(chatId));
 
             if (response?.access_token) {
-                localStorage.setItem("token", response.access_token);
-                localStorage.setItem("user_id", response.id?.toString() || chatId);
+                window.localStorage.setItem("token", response.access_token);
+                window.localStorage.setItem("user_id", response.id?.toString() || chatId);
                 setIsRegistered(true);
                 console.log('[checkUserExists] User found, token saved');
                 return true;
             } else {
                 console.log('[checkUserExists] User not found on server');
+                return false;
             }
         } catch (error) {
             console.error("Error checking user:", error);
@@ -310,8 +312,8 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
             return { success: false, error: "No user data" };
         }
 
-        const privacy = localStorage.getItem("privacy") === "true";
-        const policy = localStorage.getItem("policy") === "true";
+        const privacy = window.localStorage.getItem("privacy") === "true";
+        const policy = window.localStorage.getItem("policy") === "true";
 
         try {
             const userData = {
@@ -320,6 +322,7 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
                 first_name: state.user.first_name || state.user.firstName,
                 last_name: state.user.lastName,
                 phone: phoneNumber || null,
+                avatar: state.user.avatar ?? "",
                 privacy_accepted: privacy,
                 policy_accepted: policy
             };
@@ -327,10 +330,10 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
             const response = await Account.register(userData);
 
             if (response?.access_token) {
-                localStorage.setItem("token", response.access_token);
-                localStorage.setItem("user_id", response.id?.toString() || state.user.id.toString());
-                localStorage.setItem("privacy", privacy.toString());
-                localStorage.setItem("policy", policy.toString());
+                window.localStorage.setItem("token", response.access_token);
+                window.localStorage.setItem("user_id", response.id?.toString() || state.user.id.toString());
+                window.localStorage.setItem("privacy", privacy.toString());
+                window.localStorage.setItem("policy", policy.toString());
                 setIsRegistered(true);
                 console.log('[register] Registration successful');
                 return { success: true, token: response.access_token };
@@ -346,7 +349,6 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
     // Проверяем регистрацию при готовности
     useEffect(() => {
         if (state.ready && state.user?.id) {
-            console.log(state);
             checkUserExists();
         }
     }, [state.ready, state.user]);

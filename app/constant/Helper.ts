@@ -5,14 +5,26 @@ export const Helper = {
         laptop: '1024px',
         desktop: '2560px'
     },
-    url: 'https://medix.local',
-    imageUrl: 'https://medix.local/images',
-    apiUrl: 'https://medix.local/api',
+    url: 'https://medix.amgs.online',
+    imageUrl: 'https://medix.amgs.online/images',
+    apiUrl: 'https://medix.amgs.online/api',
     findById: (array: Array<any>, id:number) => {
         return array.find(item => {return item.id === id})
     },
     findBy:  (array: Array<any>, key: string, id:number) => {
         return array.filter(item => {return item[key] === id})
+    },
+    getWeekDay: (date) => {
+        // Массив, где ПН - индекс 0, ВС - индекс 6
+        let days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+        
+        // Корректируем: getDay() дает Вс=0, Пн=1...
+        let day = date.getDay();
+        
+        // Если getDay() возвращает 0 (ВС), ставим его в конец (индекс 6)
+        if (day === 0) day = 7; 
+        
+        return days[day - 1]; // -1 так как массив с 0
     },
     dateFormat: (date: Date, format: string) => {
         const day = date.getDate();

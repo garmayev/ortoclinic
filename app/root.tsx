@@ -1,9 +1,9 @@
 // app/root.tsx
 import { useEffect } from "react";
+import { Outlet } from "react-router";
 import { AppProvider } from "~/hooks/AppContext";
 import { MessengerProvider } from "~/hooks/MessengerContext";
 import "~/app.css";
-import {Outlet} from "react-router";
 
 export default function Root() {
     useEffect(() => {

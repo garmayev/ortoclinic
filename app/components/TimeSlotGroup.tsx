@@ -1,5 +1,5 @@
 import {useState, useMemo, useCallback} from "react";
-import styled from "styled-components";
+import {styled} from "styled-components";
 
 // ============ Стили ============
 const Container = styled.div`

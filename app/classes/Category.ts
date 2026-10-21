@@ -2,7 +2,21 @@ import axios from "axios";
 import {Helper} from "~/constant/Helper";
 import Company from "~/classes/Company";
 import Service from "~/classes/Service";
-import {data} from "react-router";
+
+export interface ScheduleItem {
+    id: number,
+    target_id: number,
+    target_class: string,
+    day_of_week: number,
+    is_working: number,
+    start_time: string,
+    end_time: string,
+    break_start: string|null,
+    break_end: string|null,
+    created_at: number,
+    updated_at: number,
+    available_time_slots: [],
+}
 
 export interface rawCategory {
     id: number;
@@ -24,6 +38,7 @@ class Category {
     private _title = "";
     private _children = [];
     private _services = [];
+    private _schedules = [];
 
     get id(): number {
         return this._id;
@@ -88,12 +103,19 @@ class Category {
     }
 
     set services(value: []) {
-        console.log(value)
         // @ts-ignore
         this._services = value.map(item => new Service(item));
     }
-
-    constructor(data: rawCategory) {
+    
+    get schedules() {
+        return this._schedules;
+    }
+    
+    set schedules(value) {
+        this._schedules = value;
+    }
+    
+    constructor(data: any) {
         this.id = data.id
         this.company = data.company_id;
         this.source = data.source;
@@ -101,17 +123,34 @@ class Category {
         this.title = data.title;
         this.services = data.services;
         this.children = data.children;
+        this.schedules = data.schedules;
     }
 
     static async getChildrenById(id: number) {
-        const category = await axios.get(`${Helper.apiUrl}/category/view?id=${id}&filter[status]=1`)
+        const token = localStorage.getItem('token');
+        const category = await axios.get(`${Helper.apiUrl}/category/view?id=${id}&filter[status]=1`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
         return new Category(category.data);
     }
 
     static async getTimeList(id: number, date: number) {
-        const timeSlots = await axios.get(`${Helper.apiUrl}/category/time-slots?id=${id}&date=${date}`);
+        const token = localStorage.getItem('token')
+        const timeSlots = await axios.get(`${Helper.apiUrl}/category/time-slots?id=${id}&date=${date}`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
         return timeSlots.data;
     };
+
+    getSchedule(date: any): ScheduleItem {
+        let day = date.getDay();
+        if (day === 0) day = 7;
+        return this.schedules[day];
+    }
 }
 
 export default Category

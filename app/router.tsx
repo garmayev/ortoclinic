@@ -10,7 +10,7 @@ import Promo from "./pages/home/promo/route";
 import PromoView from "./pages/home/promo/view";
 import Services from "./pages/home/services/route";
 import ServicesView from "./pages/home/services/view";
-import Create from "~/pages/create/route";
+import Create from "~/pages/create/route.tsx";
 
 // Определяем базовый путь
 const getBasename = () => {

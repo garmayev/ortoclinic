@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import {styled} from "styled-components";
 
 const PopupContainer = styled.div`
     position: fixed;
@@ -22,13 +22,15 @@ const PopupContent = styled.div`
     margin: 20px;
     text-align: center;
     border-radius: var(--border-radius);
+    font-family: "TildaSansLight";
+    font-weight: 100;
 `
 
 const Popup = ({title, children, onClick}: {title: string, children?: React.ReactNode, onClick?: () => void}) => {
     return (
         <PopupContainer>
             <PopupContent>
-                <div>{title}</div>
+                <div style={{fontFamily: "TildaSansMedium"}}>{title}</div>
                 <div style={{display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", height: "100%"}}>{children}</div>
             </PopupContent>
         </PopupContainer>

@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import {styled} from "styled-components";
 import {useAppContext} from "~/hooks/AppContext";
 import {NavLink} from "react-router";
 import homeIcon from "~/assets/home.png";

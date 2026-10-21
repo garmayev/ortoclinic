@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import {styled} from "styled-components";
 import type {ChangeEvent, CSSProperties} from "react";
 
 interface SelectListProps {
@@ -17,6 +17,8 @@ const HiddenInput = styled.input`
 const Item = styled.div`
     position: relative;
     width: 100%;
+    display: flex;
+    justify-content: center;
 `
 
 const Label = styled.label<{ checked: boolean }>`
@@ -45,7 +47,6 @@ export const SelectList = ({list, name, onChange, type = "radio", value, ...prop
     return (
         <div {...props}>
             {list.map((item, index) => {
-                console.log(item);
                 const checked = type === "checkbox"
                     ? value?.includes(item.id)
                     : Number(value) === Number(item.id)

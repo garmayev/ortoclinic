@@ -63,29 +63,26 @@ export default class Appointment {
     constructor(data: rawAppointment) {
         this.id = data.id;
         if (data.timestamp) {
-            console.log((Number(data.timestamp) + (8 * 60 * 60)) * 1000)
             this.date = new Date((Number(data.timestamp) - ( 8 * 60 * 60 )) * 1000);
         } else {
-            console.log(data.date)
             this.date = new Date(data.date);
         }
         this.client = new Client(data.client);
         this.services = data.services.map(service => new Service(service));
-        this.categories = data.categories.map(category => new Category(category))
+        this.categories = data.categories?.map(category => new Category(category))
     }
 
-    static async last() {
+    static async last():Promise<Appointment|undefined> {
         const user_id = localStorage.getItem('user_id');
+        const company_id = import.meta.env.VITE_COMPANY_ID;
         const token = localStorage.getItem('token');
-        console.log(localStorage.getItem('token'));
-        const result = await axios.get(Helper.apiUrl + `/appointment/last?filter[client_id]=${user_id}`, {
+        const result = await axios.get(Helper.apiUrl + `/appointment/last?filter[client_id]=${user_id}&filter[status]=[0,1,2,4]&filter[company_id]=${company_id}`, {
             withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: 'Bearer ' + token,
             },
         });
-        console.log(result);
         if (result.data) {
             return new Appointment(result.data);
         }
@@ -93,19 +90,19 @@ export default class Appointment {
 
     static async cancel(id: number) {
         const token = localStorage.getItem('token');
-        const result = await axios.get(Helper.apiUrl + '/appointment/cancel?id=' + id, {
+        const company_id = import.meta.env.VITE_COMPANY_ID;
+        return await axios.get(Helper.apiUrl + `/appointment/cancel?id=${id}&company_id=${company_id}`, {
             withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: 'Bearer ' + token
             }
         });
-        return result.json();
     }
 
     static async getAll() {
         const user_id = localStorage.getItem('user_id');
-        const response = await axios.get(Helper.apiUrl + `/appointment/index?filter[client_id]=${user_id}`, {
+        const response = await axios.get(Helper.apiUrl + `/appointment/index?filter[client_id]=${user_id}&sort=-date`, {
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: 'Bearer ' + localStorage.getItem('token'),
@@ -135,10 +132,11 @@ export default class Appointment {
         formData.append('Appointment[client_id]', client_id.toString());
         formData.append('Appointment[company_id]', company_id.toString());
         formData.append('Appointment[branch_id]', branch_id.toString());
+        formData.append('Appointment[master_id]', "3048");
         services?.map((service, index) => formData.append(`Appointment[services][${index}]`, service.toString()));
         categories?.map((category, index) => formData.append(`Appointment[categories][${index}]`, category.toString()));
         const token = localStorage.getItem('token');
-        return await fetch(Helper.apiUrl + `/appointment/create`, {
+        return fetch(Helper.apiUrl + `/appointment/create`, {
             method: "POST",
             body: formData,
             headers: {
@@ -146,8 +144,5 @@ export default class Appointment {
             }
         })
             .then(response => response.json())
-            .then(response => {
-                console.log(response)
-            })
     }
 }

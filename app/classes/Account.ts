@@ -68,8 +68,9 @@ class Account {
     }
 
     static async register(user: any) {
+        const company_id = localStorage.getItem('company_id');
         try {
-            const response = await axios.post(`${Helper.apiUrl}/user/register-telegram`, user)
+            const response = await axios.post(`${Helper.apiUrl}/user/register-telegram?source=max&company_id=${company_id}`, user)
             if (response.data) {
                 return new Account(response.data)
             }

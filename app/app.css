@@ -1,6 +1,21 @@
+@import "./assets/TildaSans.07Web/TildaSans-Light/TildaSans-Light.css";
+@import "./assets/TildaSans.07Web/TildaSans-Regular/TildaSans-Regular.css";
+@import "./assets/TildaSans.07Web/TildaSans-Black/TildaSans-Black.css";
+@import "./assets/TildaSans.07Web/TildaSans-Bold/TildaSans-Bold.css";
+@import "./assets/TildaSans.07Web/TildaSans-ExtraBold/TildaSans-ExtraBold.css";
+@import "./assets/TildaSans.07Web/TildaSans-Medium/TildaSans-Medium.css";
+@import "./assets/TildaSans.07Web/TildaSans-Semibold/TildaSans-Semibold.css";
+
 @font-face {
     font-family: 'Sylfaen';
     src: local('Sylfaen'), url('./assets/sylfaen.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Tenor Sans';
+    src: local('Tenor Sans'), url('./assets/TenorSans-Regular.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import styled, {keyframes} from 'styled-components';
+import {keyframes, styled} from 'styled-components';
 
 // Анимация вращения
 const rotate = keyframes`
@@ -264,7 +264,7 @@ const LoaderText = styled.span`
 `;
 
 // Затемняющий фон для fixed режима
-const Overlay = styled.div<{ $isVisible?: boolean }>`
+const Overlay = styled.div<{ $isVisible?: boolean; $blur?: boolean }>`
     position: fixed;
     top: 0;
     left: 0;
@@ -275,7 +275,7 @@ const Overlay = styled.div<{ $isVisible?: boolean }>`
     opacity: ${props => props.$isVisible ? 1 : 0};
     visibility: ${props => props.$isVisible ? 'visible' : 'hidden'};
     transition: opacity 0.3s ease, visibility 0.3s ease;
-    backdrop-filter: blur(3px);
+    backdrop-filter: ${props => props.$blur ? 'blur(3px)' : ''};
 `;
 
 interface LoaderProps {
@@ -290,6 +290,7 @@ interface LoaderProps {
     horizontalPosition?: number | 'left' | 'center' | 'right';
     verticalPosition?: number | 'top' | 'center' | 'bottom';
     isVisible?: boolean;
+    blur?: boolean;
     positionMode?: 'fixed' | 'relative';  // Новый проп
     showOverlay?: boolean;  // Показывать ли затемнение в fixed режиме
     overlayClassName?: string;
@@ -307,6 +308,7 @@ const Loader = ({
                     horizontalPosition = 'center',
                     verticalPosition = 'center',
                     isVisible = true,
+                    blur = true,
                     positionMode = 'relative',
                     showOverlay = false,
                     overlayClassName
@@ -314,7 +316,7 @@ const Loader = ({
     return (
         <>
             {positionMode === 'fixed' && showOverlay && (
-                <Overlay $isVisible={isVisible} className={overlayClassName} />
+                <Overlay $isVisible={isVisible} $blur={blur} className={overlayClassName} />
             )}
             <LoaderWrapper
                 style={style}

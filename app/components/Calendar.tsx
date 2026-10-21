@@ -1,6 +1,5 @@
-import {type HTMLProps, useState} from "react";
-import styled from "styled-components";
-import type {DivNode} from "postcss-value-parser";
+import {useState} from "react";
+import {styled} from "styled-components";
 
 const Container = styled.div`
     padding: var(--horizontal-padding);
@@ -25,6 +24,7 @@ const Cell = styled.div`
     user-select: none;
     border-radius: calc(var(--border-radius) / 2);
     transition: all .3s;
+    color: #000;
     &.selected {
         background-color: var(--primary-color);
         color: var(--text-color);
@@ -50,9 +50,10 @@ const Header = styled.div`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    height: 4rem;
+    height: 2rem;
     border-bottom: 1px solid #ccc;
     margin-bottom: var(--horizontal-padding);
+    color: #000;
 `
 const Button = styled.button`
     background-color: transparent;
@@ -61,7 +62,7 @@ const Button = styled.button`
     display: flex;
     justify-content: center;
     align-items: center;
-    color: var(--link-color);
+    color: #000;
 
     &:disabled {
         cursor: not-allowed;
@@ -99,7 +100,7 @@ function getEndOfNextWeek() {
 }
 
 export const Calendar = ({selectedDate, onChange, closestDate = null, blockedDates = [], ...props}: CalendarProps) => {
-    const [date, setDate] = useState(new Date())
+    const [date, setDate] = useState(selectedDate)
     const [currentDate, setCurrentDate] = useState(selectedDate);
 
     const months = [
@@ -159,14 +160,14 @@ export const Calendar = ({selectedDate, onChange, closestDate = null, blockedDat
         todayDate.setHours(0, 0, 0, 0);
 
         // Проверка на даты раньше сегодня (вчера и ранее)
-        if (dateToCheck < todayDate) {
+        if (dateToCheck <= todayDate) {
             return true;
         }
 
         // Проверка на даты позже конца следующей недели
-        if (dateToCheck > getEndOfNextWeek()) {
+        /* if (dateToCheck > getEndOfNextWeek()) {
             return true;
-        }
+        } */
 
         // Проверка по closestDate
         if (closestDate) {
@@ -184,7 +185,7 @@ export const Calendar = ({selectedDate, onChange, closestDate = null, blockedDat
 
         // Проверка по blockedDates (массив конкретных дат для блокировки)
         if (blockedDates && blockedDates.length > 0) {
-            return blockedDates.some(blockedDate => {
+            return blockedDates.push(new Date()).some((blockedDate:any) => {
                 try {
                     const blocked = new Date(blockedDate);
                     blocked.setHours(0, 0, 0, 0);

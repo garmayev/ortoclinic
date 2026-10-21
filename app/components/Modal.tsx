@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import background from "~/assets/back.png";
-import styled from "styled-components";
+import {styled} from "styled-components";
 import Button from "~/components/Button";
 
 const ModalWrapper = styled.div`

@@ -1,12 +1,10 @@
-import styled from "styled-components";
-import {Outlet} from "react-router-dom";
+import {styled} from "styled-components";
+import {Outlet} from "react-router";
 import "../app.css";
 import {useAppContext} from "~/hooks/AppContext";
 import {Helper} from "~/constant/Helper";
 import Loader from "~/components/Loader";
 import AppBar from "~/components/AppBar";
-import {useMessenger} from "~/hooks/MessengerContext.tsx";
-import {useEffect} from "react";
 
 interface BackgroundProps {
     $gradient: string;
@@ -34,7 +32,7 @@ const Background = styled.div<BackgroundProps>`
         height: 100%;
         background-image: ${props => props.$gradient};
         background-size: cover;
-        opacity: ${props => props.$useOpacity ? ".4" : "1"};
+        opacity: ${props => props.$useOpacity ? ".4" : ".7"};
         pointer-events: none;
     }
 `;
@@ -113,6 +111,7 @@ const Layout = () => {
                     verticalPosition={loader.position.y}
                     isVisible={loader.showLoader}
                     positionMode="fixed"
+                    blur={loader.blur}
                     showOverlay={loader.config.showOverlay}
                 />
             )}

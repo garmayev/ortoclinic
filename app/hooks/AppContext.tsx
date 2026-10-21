@@ -18,12 +18,14 @@ interface LoaderConfig {
     dotSize?: number;
     glowIntensity?: number;
     useExtraGlow?: boolean;
+    blur?: boolean;
     positionMode?: LoaderPositionMode;
     showOverlay?: boolean;
 }
 
 interface LoaderContextType {
     // Основные состояния
+    blur: false | true | undefined;
     showLoader: boolean;
     position: LoaderPosition;
     config: LoaderConfig;
@@ -66,7 +68,8 @@ const DEFAULT_LOADER_CONFIG: LoaderConfig = {
     glowIntensity: 1,
     useExtraGlow: true,
     positionMode: 'relative',
-    showOverlay: false
+    showOverlay: false,
+    blur: true,
 };
 
 const DEFAULT_POSITION: LoaderPosition = {
@@ -137,6 +140,7 @@ export function AppProvider({children}: { children: React.ReactNode }) {
         setTitle,
         gradient: gradients[theme],
         loader: {
+            blur: true,
             // Состояния
             showLoader,
             position: loaderPosition,

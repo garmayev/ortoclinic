@@ -72,13 +72,18 @@ export default class Company {
             this.title = data.title;
             this.default_category_id = data.default_category_id;
             this.logo = data.logo;
-            this.type = "медицинский центр";
+            this.type = "ул. Каландаришвили, 31";
         }
     }
 
     static async get(company_id: any) {
         try {
-            const response = await axios.get(`${Helper.apiUrl}/company/view?id=${company_id}`);
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${Helper.apiUrl}/company/view?id=${company_id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
             return new Company(response.data);
         } catch (e) {
             return new Company({
@@ -92,7 +97,12 @@ export default class Company {
 
     static async getBranches(company_id: any) {
         try {
-            const response = await axios.get(`${Helper.apiUrl}/company/branches?id=${company_id}`);
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${Helper.apiUrl}/company/branches?id=${company_id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
             return response.data;
         } catch (e) {
             return {

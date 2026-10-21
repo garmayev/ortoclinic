@@ -1,5 +1,3 @@
-import {data} from "react-router";
-
 export interface rawClient {
     id: number;
     first_name: string;
@@ -64,6 +62,6 @@ export default class Client {
         this.first_name = data.first_name;
         this.last_name = data.last_name;
         this.phone = data.phone;
-        this.avatar = data.photo_url;
+        this.avatar = data.avatar;
     }
 }
