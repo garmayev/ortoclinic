@@ -30,7 +30,7 @@ jobs:
           ARCHIVE_NAME="dist-$(date +%Y%m%d-%H%M%S).zip"
           echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
           echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
-          zip -r $ARCHIVE_NAME max/app-1/
+          zip -r $ARCHIVE_NAME dist/
 
       - name: Upload archive as artifact
         uses: actions/upload-artifact@v4

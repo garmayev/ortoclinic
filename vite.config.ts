@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
     root: path.resolve(__dirname), // Явно указываем корень проекта
     publicDir: path.resolve(__dirname, 'public'), // Папка с публичными файлами
     build: {
-      outDir: './max/app-1',
+      outDir: 'dist',
       assetsDir: 'assets',
       emptyOutDir: true,
       rollupOptions: {
