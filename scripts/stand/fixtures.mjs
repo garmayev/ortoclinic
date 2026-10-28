@@ -22,6 +22,10 @@ export function apiFixture(path, params, config) {
     }
     if (config.apiError === '503') return { status: 503, data: { error: 'Synthetic 503' } };
     const root = catalog(config.catalog === 'empty' ? 0 : config.catalog === 'large' ? 1000 : 4);
+    if (path === '/api/category/view' && params.has('fields')) {
+        const direction = ({id, title, company_id, status, source}) => ({id, title, company_id, status, source});
+        return {status: 200, data: {...direction(root), children: root.children.map(direction)}};
+    }
     const routes = {
         '/api/company/view': { id: 9001, title: 'Синтетическая клиника — стенд', logo: '', default_category_id: 9000, branches: [] },
         '/api/user/check-chat-id': { id: Number(config.user || 900001), username: 'stand_user', access_token: 'stand-only-not-a-real-token' },

@@ -1,8 +1,11 @@
 import {Helper} from "~/constant/Helper";
 import axios from "axios";
 import {createRequestCoalescer} from '../requestCoalescer.mjs';
+import {isBookingOptimizationEnabled} from '../bookingOptimization';
 
 const shareCompanyRequest = createRequestCoalescer();
+let bookingMetadata: {scope: string; company: Company} | undefined;
+const metadataScope = (id: any) => `${localStorage.getItem('token')}:${localStorage.getItem('user_id')}:${import.meta.env.VITE_COMPANY_ID}:${id}`;
 
 interface CompanyData {
     id: number;
@@ -80,6 +83,7 @@ export default class Company {
 
     static async get(company_id: any) {
         const token = localStorage.getItem('token');
+        const scope = metadataScope(company_id);
         return shareCompanyRequest(`${token}:${import.meta.env.VITE_COMPANY_ID}`, String(company_id), async () => {
             try {
                 const response = await axios.get(`${Helper.apiUrl}/company/view?id=${company_id}`, {
@@ -88,11 +92,23 @@ export default class Company {
                         Authorization: `Bearer ${token}`
                     }
                 });
-                return new Company(response.data);
+                const company = new Company(response.data);
+                if (isBookingOptimizationEnabled() && Number(company.id) === Number(company_id) && scope === metadataScope(company_id)) {
+                    bookingMetadata = {scope, company};
+                }
+                return company;
             } catch (e) {
                 throw e;
             }
         });
+    }
+
+    // Metadata only, in memory; no service prices or availability are retained.
+    static async getForBooking(company_id: any) {
+        if (isBookingOptimizationEnabled() && bookingMetadata?.scope === metadataScope(company_id)) {
+            return bookingMetadata.company;
+        }
+        return Company.get(company_id);
     }
 
     static async getBranches(company_id: any) {

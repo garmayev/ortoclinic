@@ -13,9 +13,9 @@ const state = vi.hoisted(() => ({
 }));
 vi.mock('~/hooks/AppContext', () => ({useAppContext: () => state.context}));
 vi.mock('~/hooks/MessengerContext', () => ({useMessenger: () => ({ready: state.ready, isRegistered: state.registered})}));
-vi.mock('~/classes/Company', () => ({default: {get: state.company}}));
+vi.mock('~/classes/Company', () => ({default: {get: state.company, getForBooking: state.company}}));
 vi.mock('~/classes/Appointment', () => ({default: {last: state.last, cancel: state.cancel}}));
-vi.mock('~/classes/Category', () => ({default: {getChildrenById: state.category}}));
+vi.mock('~/classes/Category', () => ({default: {getChildrenById: state.category, getBookingDirections: state.category}}));
 vi.mock('react-router', () => ({useNavigate: () => vi.fn(), NavLink: () => null}));
 vi.mock('~/components/VisitCard', () => ({default: ({$visit, children}: any) => <div data-visit-id={$visit?.id}>{children}</div>}));
 vi.mock('~/components/Card', () => ({Card: () => null, GridContainer: () => null}));

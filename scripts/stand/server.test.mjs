@@ -42,6 +42,11 @@ test('stand serves known deep links, correct cache/MIME, and isolates all writes
     assert.match(sdk, /window.Telegram/);
     const category = await (await get('/api/category/view?id=9000', { headers: { cookie } })).json();
     assert.equal(category.children[0].services.length, 1000);
+    const compact = await (await get('/api/category/view?id=9000&fields=id,title,company_id,status,source,children.id,children.title,children.company_id,children.status,children.source', {headers: {cookie}})).json();
+    assert.equal(compact.children[0].id, category.children[0].id);
+    assert.equal(compact.children[0].title, category.children[0].title);
+    assert.equal('services' in compact.children[0], false);
+    assert.ok(JSON.stringify(compact).length < JSON.stringify(category).length / 100);
     const broken = await get('/__stand/launch?apiError=503&sdk=error', { redirect: 'manual' });
     const brokenCookie = broken.headers.get('set-cookie').split(';')[0];
     assert.equal((await get('/api/company/view', { headers: { cookie: brokenCookie } })).status, 503);

@@ -1,5 +1,6 @@
 import {useAppContext} from "~/hooks/AppContext";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
+import {isBookingOptimizationEnabled} from '../../bookingOptimization';
 import Category from "~/classes/Category";
 import Company from "~/classes/Company";
 import {Card, GridContainer} from "~/components/Card";
@@ -67,6 +68,36 @@ const Create = () => {
     const [loadError, setLoadError] = useState("")
     const [attempt, setAttempt] = useState(0)
     const [backButtonDisable, setBackButtonDisable] = useState<boolean>(true);
+    const [directionLoading, setDirectionLoading] = useState(false);
+    const [directionError, setDirectionError] = useState("");
+    const categoryRequest = useRef(0);
+    const optimizedBooking = isBookingOptimizationEnabled();
+
+    const selectCategory = async (categoryId: number) => {
+        const request = ++categoryRequest.current;
+        const selected = Helper.findById(category?.children ?? [], categoryId);
+        setSelectedCategory(selected);
+        setSelectedService(null);
+        setSelectedDate(new Date());
+        setSelectedTime(null);
+        if (!optimizedBooking || selected?.servicesLoaded) { setButtonDisable(false); return; }
+        setButtonDisable(true);
+        setDirectionLoading(true);
+        setDirectionError("");
+        try {
+            const fullCategory = await Category.getChildrenById(categoryId, company);
+            if (request !== categoryRequest.current) return;
+            setSelectedCategory(fullCategory);
+            setButtonDisable(false);
+        } catch {
+            if (request === categoryRequest.current) {
+                setSelectedCategory(undefined);
+                setDirectionError("Не удалось загрузить услуги направления. Выберите направление ещё раз.");
+            }
+        } finally {
+            if (request === categoryRequest.current) setDirectionLoading(false);
+        }
+    };
 
     const setMessage = (message: string) => {
         if (message) {
@@ -155,9 +186,17 @@ const Create = () => {
 
     async function clientLoader(isActive = () => true) {
         const company_id = import.meta.env.VITE_COMPANY_ID;
-        const c = await Company.get(company_id)
+        const c = await (optimizedBooking ? Company.getForBooking(company_id) : Company.get(company_id));
         if (c && c.default_category_id) {
-            const categories = await Category.getChildrenById(c.default_category_id);
+            const categories = optimizedBooking
+                ? await Category.getBookingDirections(c.default_category_id, c)
+                : await Category.getChildrenById(c.default_category_id);
+            if (!isActive()) return;
+            const selectedId = Number(localStorage.getItem('selected_category'));
+            const selectedIndex = categories.children.findIndex((item: Category) => item.id === selectedId);
+            if (optimizedBooking && selectedIndex >= 0 && !categories.children[selectedIndex].servicesLoaded && localStorage.getItem('selected_service')) {
+                categories.children[selectedIndex] = await Category.getChildrenById(selectedId, c);
+            }
             if (!isActive()) return;
             // @ts-ignore
             setCategory(categories)
@@ -177,7 +216,7 @@ const Create = () => {
         }).finally(() => {
             if (active) loader.hideLoader();
         });
-        return () => { active = false; loader.hideLoader(); };
+        return () => { active = false; categoryRequest.current++; loader.hideLoader(); };
     }, [ready, isRegistered, attempt]);
     useEffect(() => {
         setBarVisible(!modalVisible)
@@ -236,7 +275,7 @@ const Create = () => {
         } else {
             setTimeList([]);
         }
-    }, [selectedCategory, selectedDate])
+    }, [selectedCategory, selectedDate, optimizedBooking ? selectedService : null])
     useEffect(() => {
         if (selectedDate === null) {
             setSelectedDate(currentDate);
@@ -302,14 +341,12 @@ const Create = () => {
             }}>
                 {activePane === "category" &&
                     <div className={"category"} style={{height: "calc(100vh - 15rem)", overflowY: "auto"}}>
+                        {directionLoading && <p role="status">Загрузка услуг направления…</p>}
+                        {directionError && <p role="alert">{directionError}</p>}
                         <SelectList list={category?.children ?? []} name={"category"} value={selectedCategory?.id ?? null}
                                     onChange={(event) => {
                                         const categoryId = Number(event.target.getAttribute("value"));
-                                        setSelectedCategory(Helper.findById(category?.children ?? [], categoryId))
-                                        setSelectedService(null)
-                                        setSelectedDate(new Date())
-                                        setSelectedTime(null)
-                                        setButtonDisable(false)
+                                        void selectCategory(categoryId);
                                     }} style={{height: '75vh', overflowY: "auto"}}/>
                     </div>}
                 {activePane === "service" &&
