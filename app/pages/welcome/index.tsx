@@ -27,6 +27,8 @@ export function Index() {
     const [privacy, setPrivacy] = useState(false)
     const [_, setCheckingAuth] = useState(true)
     const [needRegistration, setNeedRegistration] = useState(false)
+    const [registrationError, setRegistrationError] = useState("")
+    const [registering, setRegistering] = useState(false)
     const {setTheme, loader} = useAppContext()
     const {webApp, user, ready, checkUserExists, register} = useMessenger()
     const navigate = useNavigate();
@@ -56,13 +58,8 @@ export function Index() {
         const checkAuth = async () => {
             console.log("[welcome checkAuth]");
             // 1. Проверяем токен в localStorage
-            const token = localStorage.getItem("token")
-            if (token) {
-                console.log("[welcome checkAuth]", "token isset");
-                loader.setShowLoader(false)
-                navigate("/home")
-                return;
-            }
+            // Проверяем принадлежность клиента клинике даже при сохранённом токене.
+            // Старые регистрации могли создать аккаунт без user_company.
 
             // 2. Если есть данные мессенджера, проверяем существование пользователя
             if (ready && user?.id) {
@@ -74,6 +71,7 @@ export function Index() {
                     // Пользователь найден, токен сохранен в checkUserExists
                     navigate("/home")
                 } else {
+                    setNeedRegistration(true)
                     console.log("[welcome checkAuth]", "user missing");
                     // Пользователь не найден - нужна регистрация
                     setCheckingAuth(false)
@@ -102,15 +100,25 @@ export function Index() {
     const isAgreementsValid = policy && privacy
 
     // Запрос номера телефона (только если нужно и доступно)
-    const requestPhoneNumber = () => {
-        webApp.requestContact().then((result) => {
-            register(result?.phone)
-                .then(response => {
-                    if (response.success) {
-                        navigate("/home")
-                    }
-                })
-        })
+    const requestPhoneNumber = async () => {
+        if (registering || !isAgreementsValid) return;
+        setRegistrationError("");
+        setRegistering(true);
+        try {
+            if (!webApp?.requestContact) throw new Error("Откройте приложение внутри MAX и повторите попытку.");
+            const result = await webApp.requestContact();
+            const phone = result?.phone ?? result?.phone_number ?? result?.responseUnsafe?.contact?.phone_number;
+            if (!phone) throw new Error("Чтобы продолжить, разрешите MAX передать номер телефона.");
+            localStorage.setItem("privacy", String(privacy));
+            localStorage.setItem("policy", String(policy));
+            const response = await register(phone);
+            if (response.success) navigate("/home");
+            else setRegistrationError("Не удалось войти. Попробуйте ещё раз.");
+        } catch (error) {
+            setRegistrationError(error instanceof Error ? error.message : "Не удалось получить номер телефона. Попробуйте ещё раз.");
+        } finally {
+            setRegistering(false);
+        }
     }
 
     return (
@@ -131,11 +139,13 @@ export function Index() {
                     />
                     <Button
                         style={{width: "100%"}}
-                        $disabled={!isAgreementsValid}
+                        disabled={!isAgreementsValid || registering}
+                        $disabled={!isAgreementsValid || registering}
                         onClick={requestPhoneNumber}
                     >
-                        Продолжить
+                        {registering ? "Проверяем…" : "Продолжить"}
                     </Button>
+                    {registrationError && <p role="alert">{registrationError}</p>}
                 </Popup>
             }
         </Content>

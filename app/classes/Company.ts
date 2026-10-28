@@ -83,19 +83,15 @@ export default class Company {
         return shareCompanyRequest(`${token}:${import.meta.env.VITE_COMPANY_ID}`, String(company_id), async () => {
             try {
                 const response = await axios.get(`${Helper.apiUrl}/company/view?id=${company_id}`, {
+                    timeout: 20000,
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
                 });
-            return new Company(response.data);
-        } catch (e) {
-            return new Company({
-                id: 0,
-                title: 'Unknown',
-                logo: '',
-                default_category_id: 0,
-            } as CompanyData);
-        }
+                return new Company(response.data);
+            } catch (e) {
+                throw e;
+            }
         });
     }
 

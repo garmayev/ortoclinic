@@ -45,7 +45,7 @@ const CompanyCard = styled.div`
 
 const Create = () => {
     const {setTheme, setBarVisible, setTitle, loader, setUseOpacity} = useAppContext();
-    const {ready} = useMessenger()
+    const {ready, isRegistered} = useMessenger()
     const navigate = useNavigate();
 
     const date = new Date(); // Current date
@@ -64,6 +64,8 @@ const Create = () => {
     const [timeList, setTimeList] = useState<TimeGroup[]>([])
     const [category, setCategory] = useState<Category>()
     const [company, setCompany] = useState<Company>()
+    const [loadError, setLoadError] = useState("")
+    const [attempt, setAttempt] = useState(0)
     const [backButtonDisable, setBackButtonDisable] = useState<boolean>(true);
 
     const setMessage = (message: string) => {
@@ -151,31 +153,32 @@ const Create = () => {
         }
     }
 
-    async function clientLoader() {
+    async function clientLoader(isActive = () => true) {
         const company_id = import.meta.env.VITE_COMPANY_ID;
         const c = await Company.get(company_id)
         if (c && c.default_category_id) {
             const categories = await Category.getChildrenById(c.default_category_id);
+            if (!isActive()) return;
             // @ts-ignore
             setCategory(categories)
             setCompany(c)
             return;
         }
-        setCategory(undefined);
-        setCompany(new Company({
-            title: '',
-            logo: '',
-            id: 0,
-            default_category_id: 0,
-            branches: [],
-        }))
+        throw new Error("В клинике не настроены направления записи");
     }
 
     useEffect(() => {
-        if (!ready) return;
-        if (!localStorage.getItem("token")) return; // или дождаться isRegistered
-        clientLoader();
-    }, [ready]);
+        if (!ready || !isRegistered) return;
+        let active = true;
+        setLoadError("");
+        loader.showFullscreenLoader();
+        clientLoader(() => active).catch(() => {
+            if (active) setLoadError("Не удалось загрузить услуги для записи. Проверьте соединение и повторите попытку.");
+        }).finally(() => {
+            if (active) loader.hideLoader();
+        });
+        return () => { active = false; loader.hideLoader(); };
+    }, [ready, isRegistered, attempt]);
     useEffect(() => {
         setBarVisible(!modalVisible)
     }, [modalVisible]);
@@ -185,11 +188,7 @@ const Create = () => {
         setUseOpacity(true)
         setTitle("Записаться");
 
-        loader.showFullscreenLoader()
-        loader.setShowLoader(true)
-        
         if (ready && category) {
-            loader.setShowLoader(false)
             const c = localStorage.getItem("selected_category");
             const s = localStorage.getItem("selected_service");
 
@@ -246,6 +245,7 @@ const Create = () => {
 
     return (
         <>
+            {loadError && <div role="alert"><p>{loadError}</p><Button $variant="secondary" onClick={() => setAttempt(value => value + 1)}>Повторить</Button></div>}
             {message && <Alert $message={message}/>}
             <CompanyCard>
                 <div className={"company-logo"}>

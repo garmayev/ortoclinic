@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
     define: mode === 'stand' ? { 'import.meta.env.VITE_COMPANY_ID': JSON.stringify('9001') } : {},
     plugins: [
       react(),
-      tsconfigPaths(),
+      tsconfigPaths({projects: ['./tsconfig.json']}),
     ],
     base: baseUrl,
     root: path.resolve(__dirname), // Явно указываем корень проекта

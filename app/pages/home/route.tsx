@@ -65,6 +65,8 @@ const HomeComponent = () => {
     const {setTheme, setBarVisible, setTitle, setUseOpacity, loader} = useAppContext()
     const [appointment, setAppointment] = useState<Appointment>()
     const [company, setCompany] = useState<Company>()
+    const [loadError, setLoadError] = useState("")
+    const [attempt, setAttempt] = useState(0)
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -72,26 +74,29 @@ const HomeComponent = () => {
         setTheme('static')
         setUseOpacity(false)
         setBarVisible(true)
+        let active = true;
+        setLoadError("");
+        setTitle("");
+        loader.showFullscreenLoader();
         clientLoader().then(result => {
+            if (!active) return;
             if (result.company) {
                     setCompany(result.company);
             }
             if (result.appointment) {
                 setAppointment(result.appointment)
             }
-        })
-    }, [user, isRegistered]);
-    useEffect(() => {
-        setTitle("")
-        loader.showFullscreenLoader()
-        loader.setShowLoader(true);
-        if (company && ready) {
-            loader.setShowLoader(false)
-        }
-    }, [ready, company]);
+        }).catch(() => {
+            if (active) setLoadError("Не удалось загрузить данные клиники. Проверьте соединение и повторите попытку.");
+        }).finally(() => {
+            if (active) loader.hideLoader();
+        });
+        return () => { active = false; loader.hideLoader(); };
+    }, [ready, user, isRegistered, attempt]);
 
     return (
         <>
+            {loadError && <div role="alert"><p>{loadError}</p><Button $variant="secondary" onClick={() => setAttempt(value => value + 1)}>Повторить</Button></div>}
             <VisitContainer visit={appointment}>
                 <div style={{margin: "0 auto", width: "80%"}}>
                     {appointment ?
