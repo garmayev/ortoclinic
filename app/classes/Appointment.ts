@@ -103,7 +103,8 @@ export default class Appointment {
 
     static async getAll() {
         const user_id = localStorage.getItem('user_id');
-        const response = await axios.get(Helper.apiUrl + `/appointment/index?filter[client_id]=${user_id}&sort=-date`, {
+        const company_id = import.meta.env.VITE_COMPANY_ID;
+        const response = await axios.get(Helper.apiUrl + `/appointment/index?filter[client_id]=${user_id}&filter[company_id]=${company_id}&sort=-date`, {
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: 'Bearer ' + localStorage.getItem('token'),

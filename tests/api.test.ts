@@ -14,6 +14,16 @@ beforeEach(() => {
 });
 
 describe('mobile API authentication and errors', () => {
+    it('filters visit history by the configured clinic and current client', async () => {
+        vi.stubEnv('VITE_COMPANY_ID', '42');
+        vi.stubGlobal('localStorage', {getItem: (key: string) => ({token: 'mobile-token', user_id: '123', company_id: '999'}[key] ?? null)});
+        vi.mocked(axios.get).mockResolvedValue({data: []});
+        await expect(Appointment.getAll()).resolves.toEqual([]);
+        expect(axios.get).toHaveBeenCalledWith(
+            expect.stringContaining('/appointment/index?filter[client_id]=123&filter[company_id]=42&sort=-date'),
+            expect.objectContaining({headers: expect.objectContaining({Authorization: 'Bearer mobile-token'})}),
+        );
+    });
     it('sends the bearer token without requiring browser cookies', async () => {
         vi.mocked(axios.get).mockResolvedValue({data: {id: 1, default_category_id: 8}});
         await Company.get(1);

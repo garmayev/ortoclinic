@@ -1,6 +1,6 @@
 import {useNavigate} from "react-router";
 import {useAppContext} from "~/hooks/AppContext";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {styled} from "styled-components";
 import Appointment from "~/classes/Appointment";
 import Button from "~/components/Button";
@@ -67,10 +67,44 @@ const HomeComponent = () => {
     const [company, setCompany] = useState<Company>()
     const [loadError, setLoadError] = useState("")
     const [attempt, setAttempt] = useState(0)
+    const [cancelling, setCancelling] = useState(false)
+    const cancellationPending = useRef(false)
+    const pageGeneration = useRef(0)
     const navigate = useNavigate()
+
+    const cancelAppointment = async () => {
+        if (appointment?.id === undefined || cancellationPending.current) return;
+        const generation = pageGeneration.current;
+        cancellationPending.current = true;
+        setCancelling(true);
+        setLoadError("");
+        let cancelled = false;
+        try {
+            const result = await Appointment.cancel(appointment.id);
+            if (generation !== pageGeneration.current || !result) return;
+            cancelled = true;
+            setAppointment(undefined);
+            const nextAppointment = await Appointment.last();
+            if (generation === pageGeneration.current) setAppointment(nextAppointment);
+        } catch {
+            if (generation === pageGeneration.current) {
+                setLoadError(cancelled
+                    ? "Запись отменена, но не удалось обновить последнюю запись. Повторите загрузку."
+                    : "Не удалось отменить запись. Проверьте соединение и повторите попытку.");
+            }
+        } finally {
+            if (generation === pageGeneration.current) {
+                cancellationPending.current = false;
+                setCancelling(false);
+            }
+        }
+    };
 
     useEffect(() => {
         if (!ready || !isRegistered) return;
+        pageGeneration.current++;
+        cancellationPending.current = false;
+        setCancelling(false);
         setTheme('static')
         setUseOpacity(false)
         setBarVisible(true)
@@ -83,15 +117,13 @@ const HomeComponent = () => {
             if (result.company) {
                     setCompany(result.company);
             }
-            if (result.appointment) {
-                setAppointment(result.appointment)
-            }
+            setAppointment(result.appointment)
         }).catch(() => {
             if (active) setLoadError("Не удалось загрузить данные клиники. Проверьте соединение и повторите попытку.");
         }).finally(() => {
             if (active) loader.hideLoader();
         });
-        return () => { active = false; loader.hideLoader(); };
+        return () => { active = false; pageGeneration.current++; loader.hideLoader(); };
     }, [ready, user, isRegistered, attempt]);
 
     return (
@@ -104,16 +136,7 @@ const HomeComponent = () => {
                             <Button $variant={"secondary"} disabled={false} onClick={() => {
                                 navigate("/create")
                             }}>Записаться</Button>
-                            <Button $variant={"primary"} disabled={false} onClick={() => {
-                                // @ts-ignore
-                                Appointment.cancel(Number(appointment?.id))
-                                    .then((result) => {
-                                        if (result) {
-                                            setAppointment(undefined);
-                                        }
-                                    })
-//                                window.location.reload();
-                            }}>Отменить</Button>
+                            <Button $variant={"primary"} disabled={cancelling} onClick={cancelAppointment}>Отменить</Button>
                         </>
                         : <>
                             <Button $variant={"secondary"} disabled={false} onClick={() => {
