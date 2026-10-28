@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      tsconfigPaths(),
+      tsconfigPaths({projects: ['./tsconfig.json']}),
     ],
     base: baseUrl,
     root: path.resolve(__dirname), // Явно указываем корень проекта

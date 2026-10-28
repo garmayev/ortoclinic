@@ -1,6 +1,5 @@
 import {Helper} from "~/constant/Helper";
 import axios from "axios";
-import {data} from "react-router";
 
 interface CompanyData {
     id: number;
@@ -80,18 +79,14 @@ export default class Company {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(`${Helper.apiUrl}/company/view?id=${company_id}`, {
+                timeout: 20000,
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             });
             return new Company(response.data);
         } catch (e) {
-            return new Company({
-                id: 0,
-                title: 'Unknown',
-                logo: '',
-                default_category_id: 0,
-            } as CompanyData);
+            throw e;
         }
     }
 

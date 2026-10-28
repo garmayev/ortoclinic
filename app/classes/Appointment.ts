@@ -77,6 +77,7 @@ export default class Appointment {
         const company_id = import.meta.env.VITE_COMPANY_ID;
         const token = localStorage.getItem('token');
         const result = await axios.get(Helper.apiUrl + `/appointment/last?filter[client_id]=${user_id}&filter[status]=[0,1,2,4]&filter[company_id]=${company_id}`, {
+            timeout: 20000,
             withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',

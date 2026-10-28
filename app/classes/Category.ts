@@ -55,6 +55,7 @@ class Category {
     set company(value:number) {
         Company.get(value)
             .then(company => this._company = company)
+            .catch(() => { this._company = undefined; })
     }
 
     get parent(): Category | undefined {
@@ -129,6 +130,7 @@ class Category {
     static async getChildrenById(id: number) {
         const token = localStorage.getItem('token');
         const category = await axios.get(`${Helper.apiUrl}/category/view?id=${id}&filter[status]=1`, {
+            timeout: 20000,
             headers: {
                 Authorization: `Bearer ${token}`
             }

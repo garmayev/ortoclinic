@@ -278,11 +278,6 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
             return false;
         }
 
-        const existingToken = window.localStorage.getItem("token");
-        if (existingToken) {
-            setIsRegistered(true);
-            return true;
-        }
 
         try {
             const chatId = state.user.id.toString();
@@ -296,6 +291,9 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
                 console.log('[checkUserExists] User found, token saved');
                 return true;
             } else {
+                window.localStorage.removeItem("token");
+                window.localStorage.removeItem("user_id");
+                setIsRegistered(false);
                 console.log('[checkUserExists] User not found on server');
                 return false;
             }

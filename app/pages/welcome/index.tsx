@@ -49,20 +49,18 @@ export function Index() {
 
     // Проверка авторизации и существования пользователя
     useEffect(() => {
+        let active = true;
         loader.setShowLoader(true)
         const checkAuth = async () => {
             console.log("[welcome checkAuth]");
             // 1. Проверяем токен в localStorage
-            const token = localStorage.getItem("token")
-            if (token) {
-                console.log("[welcome checkAuth]", "token isset");
-                loader.setShowLoader(false)
-                navigate("/home")
-            }
+            // Проверяем принадлежность клиента клинике даже при сохранённом токене.
+            // Старые регистрации могли создать аккаунт без user_company.
 
             // 2. Если есть данные мессенджера, проверяем существование пользователя
             if (ready && user?.id) {
                 const exists = await checkUserExists()
+                if (!active) return;
 
                 if (exists) {
                     console.log("[welcome checkAuth]", "user exist");
@@ -82,14 +80,15 @@ export function Index() {
             setCheckingAuth(false)
             loader.setShowLoader(false)
         }
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
             loader.setLoaderConfig({blur: false})
             checkAuth()
                 .finally(() => {
                     console.log("[welcome checkAuth]", "finally");
-                    loader.setShowLoader(false)
+                    if (active) loader.setShowLoader(false)
                 })
         }, 3000)
+        return () => { active = false; clearTimeout(timeout); };
     }, [ready, user]);
 
     // Проверка валидности согласий

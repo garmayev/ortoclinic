@@ -58,7 +58,8 @@ class Account {
 
     static async checkChatId(chatId: number) {
         try {
-            const response = await axios.get(`${Helper.apiUrl}/user/check-chat-id?chat_id=${chatId}`)
+            const company_id = import.meta.env.VITE_COMPANY_ID;
+            const response = await axios.get(`${Helper.apiUrl}/user/check-chat-id?chat_id=${chatId}&company_id=${company_id}`, {timeout: 20000})
             if (response.data) {
                 return new Account(response.data)
             }
@@ -68,7 +69,7 @@ class Account {
     }
 
     static async register(user: any) {
-        const company_id = localStorage.getItem('company_id');
+        const company_id = import.meta.env.VITE_COMPANY_ID;
         try {
             const response = await axios.post(`${Helper.apiUrl}/user/register-telegram?source=max&company_id=${company_id}`, user)
             if (response.data) {
