@@ -1,6 +1,8 @@
 import {Helper} from "~/constant/Helper";
 import axios from "axios";
-import {data} from "react-router";
+import {createRequestCoalescer} from '../requestCoalescer.mjs';
+
+const shareCompanyRequest = createRequestCoalescer();
 
 interface CompanyData {
     id: number;
@@ -77,13 +79,14 @@ export default class Company {
     }
 
     static async get(company_id: any) {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${Helper.apiUrl}/company/view?id=${company_id}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+        const token = localStorage.getItem('token');
+        return shareCompanyRequest(`${token}:${import.meta.env.VITE_COMPANY_ID}`, String(company_id), async () => {
+            try {
+                const response = await axios.get(`${Helper.apiUrl}/company/view?id=${company_id}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
             return new Company(response.data);
         } catch (e) {
             return new Company({
@@ -93,6 +96,7 @@ export default class Company {
                 default_category_id: 0,
             } as CompanyData);
         }
+        });
     }
 
     static async getBranches(company_id: any) {

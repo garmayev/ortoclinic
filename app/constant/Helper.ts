@@ -7,7 +7,7 @@ export const Helper = {
     },
     url: 'https://medix.amgs.online',
     imageUrl: 'https://medix.amgs.online/images',
-    apiUrl: 'https://medix.amgs.online/api',
+    apiUrl: import.meta.env.MODE === 'stand' ? '/api' : 'https://medix.amgs.online/api',
     findById: (array: Array<any>, id:number) => {
         return array.find(item => {return item.id === id})
     },

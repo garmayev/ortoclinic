@@ -49,10 +49,12 @@ const VisitBackground = styled.div`
 const HomeComponent = () => {
     async function clientLoader() {
         const company_id = import.meta.env.VITE_COMPANY_ID;
-        const company = await Company.get(company_id); // теперь это уже данные, а не Response
+        const [company, appointment] = await Promise.all([
+            Company.get(company_id),
+            Appointment.last(),
+        ]);
         localStorage.setItem('company_id', String(company.id))
         localStorage.setItem('defaultCategory', String(company.default_category_id))
-        const appointment = await Appointment.last();
         return {
             appointment: appointment,
             company: company

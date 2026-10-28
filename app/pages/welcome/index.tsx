@@ -1,4 +1,5 @@
-import mainImage from "../../assets/main_1.png"
+import mainImage from "../../assets/generated/main_1.webp"
+import mainAvif from "../../assets/generated/main_1.avif"
 import {styled} from "styled-components";
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router";
@@ -49,6 +50,8 @@ export function Index() {
 
     // Проверка авторизации и существования пользователя
     useEffect(() => {
+        if (!ready) return;
+        let active = true;
         loader.setShowLoader(true)
         const checkAuth = async () => {
             console.log("[welcome checkAuth]");
@@ -58,11 +61,13 @@ export function Index() {
                 console.log("[welcome checkAuth]", "token isset");
                 loader.setShowLoader(false)
                 navigate("/home")
+                return;
             }
 
             // 2. Если есть данные мессенджера, проверяем существование пользователя
             if (ready && user?.id) {
                 const exists = await checkUserExists()
+                if (!active) return;
 
                 if (exists) {
                     console.log("[welcome checkAuth]", "user exist");
@@ -82,14 +87,15 @@ export function Index() {
             setCheckingAuth(false)
             loader.setShowLoader(false)
         }
-        setTimeout(() => {
-            loader.setLoaderConfig({blur: false})
-            checkAuth()
-                .finally(() => {
-                    console.log("[welcome checkAuth]", "finally");
-                    loader.setShowLoader(false)
+        loader.setLoaderConfig({blur: false})
+        checkAuth()
+                .catch(() => {
+                    if (active) setCheckingAuth(false);
                 })
-        }, 3000)
+                .finally(() => {
+                    if (active) loader.setShowLoader(false)
+                })
+        return () => { active = false; };
     }, [ready, user]);
 
     // Проверка валидности согласий
@@ -109,7 +115,7 @@ export function Index() {
 
     return (
         <Content $justifyContent={"flex-start"} style={{overflow: "hidden"}}>
-            <Image src={mainImage} alt={"Medix"}/>
+            <picture><source srcSet={mainAvif} type="image/avif"/><Image src={mainImage} alt={"Medix"} fetchPriority="high"/></picture>
 
             {needRegistration &&
                 <Popup title={"Запуская приложение вы даете согласие на обработку персональных данных"}>

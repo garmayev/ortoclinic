@@ -5,3 +5,7 @@
 /.react-router/
 /build/
 /max/
+/dist/
+/.optimization-baseline/
+/app/assets/generated/
+/dist-stand/

@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
   const baseUrl = isDev ? '/' : '/max/app-1/';
 
   return {
+    define: mode === 'stand' ? { 'import.meta.env.VITE_COMPANY_ID': JSON.stringify('9001') } : {},
     plugins: [
       react(),
       tsconfigPaths(),
@@ -18,7 +19,8 @@ export default defineConfig(({ mode }) => {
     root: path.resolve(__dirname), // Явно указываем корень проекта
     publicDir: path.resolve(__dirname, 'public'), // Папка с публичными файлами
     build: {
-      outDir: 'dist',
+      assetsInlineLimit: 0,
+      outDir: mode === 'stand' ? 'dist-stand' : 'dist',
       assetsDir: 'assets',
       emptyOutDir: true,
       rollupOptions: {

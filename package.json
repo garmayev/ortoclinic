@@ -3,6 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "images": "node scripts/optimize-images.mjs",
+    "predev": "npm run images",
+    "prebuild": "npm run images",
+    "prebuild:dev": "npm run images",
+    "test": "node --test app/*.test.mjs",
+    "prebuild:stand": "npm run images",
+    "build:stand": "vite build --mode stand",
+    "stand": "node scripts/stand/server.mjs",
+    "test:stand": "node --test scripts/stand/*.test.mjs",
     "dev": "vite",
     "build": "vite build",
     "build:dev": "cross-env NODE_ENV=development vite build",
@@ -26,6 +35,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.7.0",
     "cross-env": "^10.1.0",
+    "sharp": "^0.34.5",
     "typescript": "^5.9.2",
     "vite": "^6.4.1",
     "vite-tsconfig-paths": "^5.1.4"

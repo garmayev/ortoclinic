@@ -120,6 +120,11 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     // Инициализация из глобальных данных
     const initializeFromData = (data: any) => {
+        if (data?.ready && data.type === 'none') {
+            setState({ messengerType: 'none', webApp: null, user: null, ready: true });
+            initializedRef.current = true;
+            return true;
+        }
         if (initializedRef.current) {
             console.log('[MessengerProvider] Already initialized, skipping');
             return true;

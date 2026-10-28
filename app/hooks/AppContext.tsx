@@ -1,5 +1,6 @@
 import {createContext, useContext, useState} from "react";
-import back from "~/assets/back.png"
+import back from "~/assets/generated/back.webp"
+import backAvif from "~/assets/generated/back.avif"
 
 type ThemeType = 'default' | 'gradient' | 'static';
 type HorizontalPositionType = 'left' | 'center' | 'right';
@@ -89,7 +90,7 @@ export function AppProvider({children}: { children: React.ReactNode }) {
     const gradients = {
         default: 'radial-gradient(circle at 90% 10%, rgba(232, 213, 244, 0.6) 0%, transparent 50%), radial-gradient(circle at 10% 90%, rgba(178, 159, 206, 0.4) 0%, transparent 50%), linear-gradient(135deg, #d499af 0%, #a88dbd 50%, #908fc2 100%)',
         gradient: 'radial-gradient(circle at 90% 10%, rgba(232, 213, 244, 0.6) 0%, transparent 50%), radial-gradient(circle at 10% 90%, rgba(178, 159, 206, 0.4) 0%, transparent 50%), linear-gradient(135deg, #d499af 0%, #a88dbd 50%, #908fc2 100%)',
-        static: `url(${back})`
+        static: `image-set(url("${backAvif}") type("image/avif"), url("${back}") type("image/webp"))`
     };
     const handleSetLoaderPosition = (x: number | HorizontalPositionType, y: number | VerticalPositionType) => {
         setLoaderPosition({x, y});

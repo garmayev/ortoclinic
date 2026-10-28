@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
-import background from "~/assets/back.png";
+import background from "~/assets/generated/back.webp";
+import backgroundAvif from "~/assets/generated/back.avif";
 import {styled} from "styled-components";
 import Button from "~/components/Button";
 
@@ -45,7 +46,7 @@ const ModalContainer = styled.div`
         display: block;
         width: 100%;
         height: 100%;
-        background-image: url(${background});
+        background-image: image-set(url("${backgroundAvif}") type("image/avif"), url("${background}") type("image/webp"));
         background-size: cover;
         background-position: center;
         opacity: .5;
