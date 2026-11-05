@@ -44,6 +44,10 @@ const CompanyCard = styled.div`
     }
 `
 
+class BookingConfigurationError extends Error {
+    name = 'BookingConfigurationError';
+}
+
 const getTomorrow = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -192,11 +196,12 @@ const Create = () => {
 
     async function clientLoader(isActive = () => true) {
         const company_id = import.meta.env.VITE_COMPANY_ID;
-        const c = await (optimizedBooking ? Company.getForBooking(company_id) : Company.get(company_id));
-        if (c && c.default_category_id) {
+        const c = await (optimizedBooking ? Company.getForBooking(company_id, attempt > 0) : Company.get(company_id));
+        const rootCategoryId = Number(c?.default_category_id);
+        if (c && Number.isInteger(rootCategoryId) && rootCategoryId > 0) {
             const categories = optimizedBooking
-                ? await Category.getBookingDirections(c.default_category_id, c)
-                : await Category.getChildrenById(c.default_category_id);
+                ? await Category.getBookingDirections(rootCategoryId, c)
+                : await Category.getChildrenById(rootCategoryId);
             if (!isActive()) return;
             const selectedId = Number(localStorage.getItem('selected_category'));
             const selectedIndex = categories.children.findIndex((item: Category) => item.id === selectedId);
@@ -209,7 +214,7 @@ const Create = () => {
             setCompany(c)
             return;
         }
-        throw new Error("В клинике не настроены направления записи");
+        throw new BookingConfigurationError("В настройках клиники не указано направление для записи. Обратитесь в клинику.");
     }
 
     useEffect(() => {
@@ -217,8 +222,17 @@ const Create = () => {
         let active = true;
         setLoadError("");
         loader.showFullscreenLoader();
-        clientLoader(() => active).catch(() => {
-            if (active) setLoadError("Не удалось загрузить услуги для записи. Проверьте соединение и повторите попытку.");
+        clientLoader(() => active).catch((error: unknown) => {
+            if (!active) return;
+            if (error instanceof BookingConfigurationError) {
+                setLoadError(error.message);
+            } else if (error instanceof TypeError || error instanceof ReferenceError) {
+                setLoadError("Ошибка приложения при подготовке записи. Повторите загрузку приложения.");
+            } else {
+                setLoadError("Не удалось загрузить услуги для записи. Проверьте соединение и повторите попытку.");
+            }
+            // Log only the error category; never log API bodies, tokens or patient data.
+            console.error('[Booking] load failed:', error instanceof Error ? error.name : 'UnknownError');
         }).finally(() => {
             if (active) loader.hideLoader();
         });

@@ -75,3 +75,19 @@ it('falls back on an incomplete projection instead of showing a falsely empty ca
     expect(result.children[0].title).toBe('Preserved direction');
     expect(axios.get).toHaveBeenCalledTimes(2);
 });
+
+it('refreshes incomplete cached company metadata before opening booking', async () => {
+    vi.mocked(axios.get).mockResolvedValueOnce({data: {...companyData, default_category_id: 0}}).mockResolvedValueOnce({data: companyData});
+    await Company.get(1);
+    const current = await Company.getForBooking(1);
+    expect(axios.get).toHaveBeenCalledTimes(2);
+    expect(current.default_category_id).toBe(8);
+});
+
+it('can force a fresh company request even after valid metadata was cached', async () => {
+    vi.mocked(axios.get).mockResolvedValueOnce({data: companyData}).mockResolvedValueOnce({data: {...companyData, default_category_id: 9}});
+    await Company.get(1);
+    const current = await Company.getForBooking(1, true);
+    expect(axios.get).toHaveBeenCalledTimes(2);
+    expect(current.default_category_id).toBe(9);
+});

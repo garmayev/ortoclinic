@@ -119,3 +119,19 @@ it('selects tomorrow when the calendar opens directly from visit history', async
     expect(view.root.findByProps({'data-calendar': true}).props.value).toBe(new Date(2026, 10, 6).getTime());
     await act(async () => { view.unmount(); });
 });
+
+it('explains missing clinic configuration and forces a server refresh on retry', async () => {
+    state.metadata.mockResolvedValueOnce({id: 1, default_category_id: 0}).mockResolvedValueOnce({id: 1, default_category_id: 8});
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let view!: ReturnType<typeof create>;
+    await act(async () => { view = create(<Create />); });
+    expect(state.directions).not.toHaveBeenCalled();
+    expect(view.root.findByProps({role: 'alert'}).findByType('p').children.join('')).toContain('В настройках клиники');
+    expect(log).toHaveBeenCalledWith('[Booking] load failed:', 'BookingConfigurationError');
+    await act(async () => { view.root.findAllByType('button').find(button => button.children.includes('Повторить'))!.props.onClick(); });
+    expect(state.metadata).toHaveBeenLastCalledWith('1', true);
+    expect(state.directions).toHaveBeenCalledWith(8, expect.objectContaining({id: 1}));
+    expect(view.root.findAllByProps({role: 'alert'})).toHaveLength(0);
+    await act(async () => { view.unmount(); });
+    log.mockRestore();
+});
