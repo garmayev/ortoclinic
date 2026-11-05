@@ -44,13 +44,19 @@ const CompanyCard = styled.div`
     }
 `
 
+const getTomorrow = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow;
+};
+
 const Create = () => {
     const {setTheme, setBarVisible, setTitle, loader, setUseOpacity} = useAppContext();
     const {ready, isRegistered} = useMessenger()
     const navigate = useNavigate();
 
-    const date = new Date(); // Current date
-    const currentDate = new Date(date.setDate(date.getDate() + 1)); 
+    const currentDate = getTomorrow();
 
     const [title, _setTitle] = useState("Hello")
     const [modalVisible, setModalVisible] = useState(false)
@@ -59,7 +65,7 @@ const Create = () => {
     const [selectedCategory, setSelectedCategory] = useState<Category>()
     const [selectedService, setSelectedService] = useState<Service|null>()
     const [activePane, setActivePane] = useState("")
-    const [selectedDate, setSelectedDate] = useState<Date|null>(currentDate)
+    const [selectedDate, setSelectedDate] = useState<Date|null>(getTomorrow)
     const [selectedTime, setSelectedTime] = useState<GroupId|null>()
     const [message, _setMessage] = useState<string>("")
     const [timeList, setTimeList] = useState<TimeGroup[]>([])
@@ -78,7 +84,7 @@ const Create = () => {
         const selected = Helper.findById(category?.children ?? [], categoryId);
         setSelectedCategory(selected);
         setSelectedService(null);
-        setSelectedDate(new Date());
+        setSelectedDate(getTomorrow());
         setSelectedTime(null);
         if (!optimizedBooking || selected?.servicesLoaded) { setButtonDisable(false); return; }
         setButtonDisable(true);
@@ -222,6 +228,12 @@ const Create = () => {
         setBarVisible(!modalVisible)
     }, [modalVisible]);
     useEffect(() => {
+        if (!modalVisible || activePane !== 'calendar') return;
+        setSelectedDate(getTomorrow());
+        setSelectedTime(null);
+        setButtonDisable(true);
+    }, [modalVisible, activePane]);
+    useEffect(() => {
         setTheme('static')
         setBarVisible(true)
         setUseOpacity(true)
@@ -356,7 +368,7 @@ const Create = () => {
                                         const serviceId = Number(event.target.getAttribute("value"));
                                         setSelectedService(Helper.findById(selectedCategory?.services ?? [], serviceId))
                                         setButtonDisable(false)
-                                        setSelectedDate(new Date())
+                                        setSelectedDate(getTomorrow())
                                         setSelectedTime(null)
                                     }} style={{height: '75vh', overflowY: "auto"}}/>
                     </div>

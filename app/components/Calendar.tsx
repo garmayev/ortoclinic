@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {styled} from "styled-components";
 
 const Container = styled.div`
@@ -100,8 +100,11 @@ function getEndOfNextWeek() {
 }
 
 export const Calendar = ({selectedDate, onChange, closestDate = null, blockedDates = [], ...props}: CalendarProps) => {
-    const [date, setDate] = useState(selectedDate)
+    const date = selectedDate;
     const [currentDate, setCurrentDate] = useState(selectedDate);
+    useEffect(() => {
+        setCurrentDate(selectedDate);
+    }, [selectedDate]);
 
     const months = [
         'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
@@ -146,7 +149,6 @@ export const Calendar = ({selectedDate, onChange, closestDate = null, blockedDat
 
     const handleDateSelected = (day: number) => {
         const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-        setDate(newDate);
         onChange(newDate);
     };
 

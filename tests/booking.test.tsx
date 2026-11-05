@@ -1,6 +1,6 @@
 import React from 'react';
 import {act, create} from 'react-test-renderer';
-import {beforeEach, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, expect, it, vi} from 'vitest';
 import Create from '~/pages/create/route';
 
 const state = vi.hoisted(() => ({
@@ -14,9 +14,9 @@ vi.mock('~/hooks/MessengerContext', () => ({useMessenger: () => ({ready: true, i
 vi.mock('~/hooks/AppContext', () => ({useAppContext: () => ({loader: state.loader, setTheme: vi.fn(), setBarVisible: vi.fn(), setTitle: vi.fn(), setUseOpacity: vi.fn()})}));
 vi.mock('react-router', () => ({useNavigate: () => vi.fn()}));
 vi.mock('~/components/Card', () => ({Card: ({children, onClick}: any) => <button data-card onClick={onClick}>{children}</button>, GridContainer: ({children}: any) => <div>{children}</div>}));
-vi.mock('~/components/Modal', () => ({default: Object.assign(({$visible, children}: any) => $visible ? <div>{children}</div> : null, {Control: ({children}: any) => <div>{children}</div>})}));
+vi.mock('~/components/Modal', () => ({default: Object.assign(({$visible, $onClose, children}: any) => $visible ? <div><button data-close onClick={$onClose}>Close</button>{children}</div> : null, {Control: ({children}: any) => <div>{children}</div>})}));
 vi.mock('~/components/SelectList', () => ({SelectList: ({name, onChange, list}: any) => <select data-list={name} onChange={onChange}>{list.map((item: any) => <option key={item.id}>{item.title}</option>)}</select>}));
-vi.mock('~/components/Calendar', () => ({Calendar: () => null}));
+vi.mock('~/components/Calendar', () => ({Calendar: ({selectedDate, onChange}: any) => <input data-calendar value={selectedDate.getTime()} onChange={onChange}/>}));
 vi.mock('~/components/TimeSlotGroup', () => ({TimeSlotGroup: () => null}));
 beforeEach(() => {
     vi.resetAllMocks();
@@ -86,5 +86,36 @@ it('keeps selection disabled while loading, handles errors and ignores late resu
     state.full.mockRejectedValueOnce(new Error('503'));
     await act(async () => { choose(view, 10); });
     expect(view.root.findByProps({role: 'alert'})).toBeTruthy();
+    await act(async () => { view.unmount(); });
+});
+
+afterEach(() => { vi.useRealTimers(); });
+
+it('selects tomorrow on first opening and recalculates it on reopening after midnight', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 11, 31, 12));
+    let view!: ReturnType<typeof create>;
+    await act(async () => { view = create(<Create />); });
+    const openCalendar = () => view.root.findAllByProps({'data-card': true})[1].props.onClick({preventDefault() {}});
+    await act(async () => { openCalendar(); });
+    expect(view.root.findByProps({'data-calendar': true}).props.value).toBe(new Date(2027, 0, 1).getTime());
+    await act(async () => { view.root.findByProps({'data-calendar': true}).props.onChange(new Date(2027, 0, 8)); });
+    expect(view.root.findByProps({'data-calendar': true}).props.value).toBe(new Date(2027, 0, 8).getTime());
+    await act(async () => { view.root.findByProps({'data-close': true}).props.onClick(); });
+    vi.setSystemTime(new Date(2027, 0, 1, 12));
+    await act(async () => { openCalendar(); });
+    expect(view.root.findByProps({'data-calendar': true}).props.value).toBe(new Date(2027, 0, 2).getTime());
+    expect(view.root.findAllByType('button').find(button => button.children.includes('Сохранить'))!.props.disabled).toBe(true);
+    await act(async () => { view.unmount(); });
+});
+
+it('selects tomorrow when the calendar opens directly from visit history', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 10, 5, 19));
+    state.storage.set('selected_category', '10');
+    state.storage.set('selected_service', '20');
+    let view!: ReturnType<typeof create>;
+    await act(async () => { view = create(<Create />); });
+    expect(view.root.findByProps({'data-calendar': true}).props.value).toBe(new Date(2026, 10, 6).getTime());
     await act(async () => { view.unmount(); });
 });
