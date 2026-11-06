@@ -1,3 +1,4 @@
+import {createLegalConsent} from "../../legalConsentStorage.js";
 import mainImage from "../../assets/generated/main_1.webp"
 import mainAvif from "../../assets/generated/main_1.avif"
 import {styled} from "styled-components";
@@ -32,6 +33,9 @@ export function Index() {
     const {setTheme, loader} = useAppContext()
     const {webApp, user, ready, checkUserExists, register} = useMessenger()
     const navigate = useNavigate();
+    const consent = createLegalConsent(1, user?.id);
+    const [legalAccepted, setLegalAccepted] = useState(false);
+    const [authenticated, setAuthenticated] = useState(false);
 
     // Первичная настройка страницы
     useEffect(() => {
@@ -42,13 +46,12 @@ export function Index() {
         setTheme('gradient')
     }, []);
 
-    // Загрузка сохраненных согласий
     useEffect(() => {
-        const savedPrivacy = localStorage.getItem("privacy") ?? "false"
-        const savedPolicy = localStorage.getItem("policy") ?? "false"
-        setPrivacy(savedPrivacy === "true")
-        setPolicy(savedPolicy === "true")
-    }, []);
+        const accepted = consent.accepted();
+        setPolicy(accepted);
+        setPrivacy(accepted);
+        setLegalAccepted(accepted);
+    }, [user?.id]);
 
     // Проверка авторизации и существования пользователя
     useEffect(() => {
@@ -66,7 +69,8 @@ export function Index() {
                 const exists = await checkUserExists()
                 if (!active) return;
 
-                if (exists) {
+                setAuthenticated(exists);
+                if (exists && consent.accepted()) {
                     console.log("[welcome checkAuth]", "user exist");
                     // Пользователь найден, токен сохранен в checkUserExists
                     navigate("/home")
@@ -105,12 +109,13 @@ export function Index() {
         setRegistrationError("");
         setRegistering(true);
         try {
+            if (!consent.save(policy, privacy)) throw new Error("Не удалось сохранить согласия. Проверьте доступ к хранилищу приложения.");
+            setLegalAccepted(true);
+            if (authenticated) { navigate("/home"); return; }
             if (!webApp?.requestContact) throw new Error("Откройте приложение внутри MAX и повторите попытку.");
             const result = await webApp.requestContact();
             const phone = result?.phone ?? result?.phone_number ?? result?.responseUnsafe?.contact?.phone_number;
             if (!phone) throw new Error("Чтобы продолжить, разрешите MAX передать номер телефона.");
-            localStorage.setItem("privacy", String(privacy));
-            localStorage.setItem("policy", String(policy));
             const response = await register(phone);
             if (response.success) navigate("/home");
             else setRegistrationError("Не удалось войти. Попробуйте ещё раз.");
@@ -126,7 +131,8 @@ export function Index() {
             <picture><source srcSet={mainAvif} type="image/avif"/><Image src={mainImage} alt={"Medix"} fetchPriority="high"/></picture>
 
             {needRegistration &&
-                <Popup title={"Запуская приложение вы даете согласие на обработку персональных данных"}>
+                <Popup title={legalAccepted ? "Поделитесь номером телефона, чтобы войти" : "Запуская приложение вы даете согласие на обработку персональных данных"}>
+                    {!legalAccepted && <>
                     <Checkbox
                         checked={policy}
                         onChange={(event) => setPolicy(event.target.checked)}
@@ -137,13 +143,14 @@ export function Index() {
                         onChange={(event) => setPrivacy(event.target.checked)}
                         label={<p style={{color: "black", textAlign: "left"}}>Согласен на обработку <a href="/privacy.pdf">персональных данных</a></p>}
                     />
+                    </>}
                     <Button
                         style={{width: "100%"}}
                         disabled={!isAgreementsValid || registering}
                         $disabled={!isAgreementsValid || registering}
                         onClick={requestPhoneNumber}
                     >
-                        {registering ? "Проверяем…" : "Продолжить"}
+                        {registering ? "Проверяем…" : "Отправить"}
                     </Button>
                     {registrationError && <p role="alert">{registrationError}</p>}
                 </Popup>

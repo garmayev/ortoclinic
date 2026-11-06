@@ -1,6 +1,7 @@
 // app/hooks/MessengerContext.tsx
 
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import {createLegalConsent} from "../legalConsentStorage.js";
 import Account from "~/classes/Account";
 
 export type MessengerType = 'telegram' | 'max' | 'none';
@@ -315,8 +316,9 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
             return { success: false, error: "No user data" };
         }
 
-        const privacy = window.localStorage.getItem("privacy") === "true";
-        const policy = window.localStorage.getItem("policy") === "true";
+        const accepted = createLegalConsent(1, state.user.id).accepted();
+        const privacy = accepted;
+        const policy = accepted;
 
         try {
             const userData = {
@@ -335,8 +337,6 @@ export const MessengerProvider: React.FC<{ children: ReactNode }> = ({ children 
             if (response?.access_token) {
                 window.localStorage.setItem("token", response.access_token);
                 window.localStorage.setItem("user_id", response.id?.toString() || state.user.id.toString());
-                window.localStorage.setItem("privacy", privacy.toString());
-                window.localStorage.setItem("policy", policy.toString());
                 setIsRegistered(true);
                 console.log('[register] Registration successful');
                 return { success: true, token: response.access_token };
